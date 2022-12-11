@@ -3,12 +3,15 @@ var cors = require('cors')
 const { dbConnection } = require('../database/config')
 require('dotenv').config()
 const fileUpload = require('express-fileupload')
+const { socketController } = require('../sockets/controller')
 
 class Server {
 
     constructor() {
         this.app = express()
         this.port = process.env.PORT
+        this.server = require('http').createServer(this.app)
+        this.io = require('socket.io')(this.server)
 
         this.paths = {
             auth:       '/api/auth',
@@ -27,6 +30,9 @@ class Server {
 
         //Rutas de mi aplicación
         this.routes()
+
+        //Sockets
+        this.sockets()
     }
 
     async connectDb(){
@@ -58,6 +64,10 @@ class Server {
         this.app.use( this.paths.productos, require('../routes/productos') )
         this.app.use( this.paths.buscar, require('../routes/buscar') )
         this.app.use( this.paths.uploads, require('../routes/uploads') )
+    }
+
+    sockets(){
+        this.io.on("connection", socketController)
     }
 
     listen(){
