@@ -1,47 +1,55 @@
-const { response, request } = require('express')
-const jwt = require('jsonwebtoken')
-const Usuario = require('../models/usuario')
+const { response, request } = require('express');
+const jwt = require('jsonwebtoken');
 
-const validarJWT = async(req = request, res = response, next) => {
+const Usuario = require('../models/usuario');
 
-    const token = req.header('x-token')
 
-    if(!token){
+const validarJWT = async( req = request, res = response, next ) => {
+
+    const token = req.header('x-token');
+
+    if ( !token ) {
         return res.status(401).json({
-            msg: 'No hay token en la peticion'
-        })
+            msg: 'No hay token en la petición'
+        });
     }
 
     try {
-        //verifica el jwt
-        const {uid} = jwt.verify( token, process.env.SECRETORPRIVATEKEY)
-        const usuario = await Usuario.findById(uid)
+        
+        const { uid } = jwt.verify( token, process.env.SECRETORPRIVATEKEY );
 
-        if(!usuario){
+        // leer el usuario que corresponde al uid
+        const usuario = await Usuario.findById( uid );
+
+        if( !usuario ) {
             return res.status(401).json({
-                msg:'Token no valido - usuario no existente'
+                msg: 'Token no válido - usuario no existe DB'
             })
         }
 
-        //Verificar si el uid tiene estado en true
-        if(!usuario.estado){
+        // Verificar si el uid tiene estado true
+        if ( !usuario.estado ) {
             return res.status(401).json({
-                msg:'Token no valido - usuario con estado: false'
+                msg: 'Token no válido - usuario con estado: false'
             })
         }
-
-        req.uid = uid
-        req.usuario = usuario
-
-        next()
+        
+        
+        req.usuario = usuario;
+        next();
 
     } catch (error) {
-        console.log(error)   
+
+        console.log(error);
         res.status(401).json({
-            msg: 'Token no valido'
-        })     
+            msg: 'Token no válido'
+        })
     }
+
 }
+
+
+
 
 module.exports = {
     validarJWT

@@ -1,5 +1,4 @@
-
-const { Schema, model } = require('mongoose')
+const { Schema, model } = require('mongoose');
 
 const CategoriaSchema = Schema({
     nombre: {
@@ -17,11 +16,13 @@ const CategoriaSchema = Schema({
         ref: 'Usuario',
         required: true
     }
-})
+});
+
 
 CategoriaSchema.methods.toJSON = function() {
-    const { __v, estado, ...data } = this.toObject()
-    return data
+    const { __v, estado, ...data  } = this.toObject();
+    return data;
 }
 
-module.exports = model( 'Categoria', CategoriaSchema)
+
+module.exports = model( 'Categoria', CategoriaSchema );

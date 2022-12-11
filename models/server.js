@@ -1,80 +1,92 @@
-const express = require('express')
-var cors = require('cors')
-const { dbConnection } = require('../database/config')
-require('dotenv').config()
-const fileUpload = require('express-fileupload')
-const { socketController } = require('../sockets/controller')
+const express = require('express');
+const cors = require('cors');
+const fileUpload = require('express-fileupload');
+const { createServer } = require('http');
+
+const { dbConnection } = require('../database/config');
+const { socketController } = require('../sockets/controller');
 
 class Server {
 
     constructor() {
-        this.app = express()
-        this.port = process.env.PORT
-        this.server = require('http').createServer(this.app)
-        this.io = require('socket.io')(this.server)
+        this.app  = express();
+        this.port = process.env.PORT;
+        this.server = createServer( this.app );
+        this.io     = require('socket.io')(this.server)
 
         this.paths = {
             auth:       '/api/auth',
-            categorias: '/api/categorias',
-            usuarios:   '/api/usuarios',
-            productos:  '/api/productos',
             buscar:     '/api/buscar',
-            uploads:    '/api/uploads'
+            categorias: '/api/categorias',
+            productos:  '/api/productos',
+            usuarios:   '/api/usuarios',
+            uploads:    '/api/uploads',
         }
 
-        //Conectar a base de datos
-        this.connectDb()
 
-        //Middlewares
-        this.middlewares()
+        // Conectar a base de datos
+        this.conectarDB();
 
-        //Rutas de mi aplicación
-        this.routes()
+        // Middlewares
+        this.middlewares();
 
-        //Sockets
-        this.sockets()
+        // Rutas de mi aplicación
+        this.routes();
+
+        // Sockets
+        this.sockets();
     }
 
-    async connectDb(){
-        await dbConnection()
+    async conectarDB() {
+        await dbConnection();
     }
 
-    middlewares(){
-        //CORS
-        this.app.use( cors() )
 
-        //Lectura y parse del body
-        this.app.use( express.json() )
+    middlewares() {
 
-        //Directorio publico
-        this.app.use( express.static('public') )
+        // CORS
+        this.app.use( cors() );
 
-        //Subir archivo
-        this.app.use(fileUpload({
+        // Lectura y parseo del body
+        this.app.use( express.json() );
+
+        // Directorio Público
+        this.app.use( express.static('public') );
+
+        // Fileupload - Carga de archivos
+        this.app.use( fileUpload({
             useTempFiles : true,
             tempFileDir : '/tmp/',
             createParentPath: true
         }));
+
     }
 
-    routes(){
-        this.app.use( this.paths.auth, require('../routes/auth') )
-        this.app.use( this.paths.categorias, require('../routes/categorias') )
-        this.app.use( this.paths.usuarios, require('../routes/usuarios') )
-        this.app.use( this.paths.productos, require('../routes/productos') )
-        this.app.use( this.paths.buscar, require('../routes/buscar') )
-        this.app.use( this.paths.uploads, require('../routes/uploads') )
+    routes() {
+        
+        this.app.use( this.paths.auth, require('../routes/auth'));
+        this.app.use( this.paths.buscar, require('../routes/buscar'));
+        this.app.use( this.paths.categorias, require('../routes/categorias'));
+        this.app.use( this.paths.productos, require('../routes/productos'));
+        this.app.use( this.paths.usuarios, require('../routes/usuarios'));
+        this.app.use( this.paths.uploads, require('../routes/uploads'));
+        
     }
 
-    sockets(){
-        this.io.on("connection", socketController)
+
+    sockets() {
+        this.io.on('connection', ( socket ) => socketController(socket, this.io ) )
     }
 
-    listen(){
-        this.app.listen( this.port, () => {
-            console.log(`Server is up and running at port ${this.port}`)
-        })
+    listen() {
+        this.server.listen( this.port, () => {
+            console.log('Servidor corriendo en puerto', this.port );
+        });
     }
+
 }
+
+
+
 
 module.exports = Server;

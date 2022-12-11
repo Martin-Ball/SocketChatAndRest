@@ -1,26 +1,62 @@
-const jwt = require('jsonwebtoken')
-require('dotenv').config()
+const jwt = require('jsonwebtoken');
+const { Usuario } = require('../models')
 
-//uid = user identifier
-const generarJWT = (uid = '') => {
-    return new Promise((resolve, reject) => {
-        
-        const payload = { uid }
-        jwt.sign(payload, process.env.SECRETORPRIVATEKEY, {
-            //tiempo en el que expira el token
+
+
+const generarJWT = ( uid = '' ) => {
+
+    return new Promise( (resolve, reject) => {
+
+        const payload = { uid };
+
+        jwt.sign( payload, process.env.SECRETORPRIVATEKEY, {
             expiresIn: '4h'
-        }, (err, token) => {
-            if(err){
-                console.log(err)
-                reject('No se pudo generar el token')
-            } else{
-                resolve(token)
+        }, ( err, token ) => {
+
+            if ( err ) {
+                console.log(err);
+                reject( 'No se pudo generar el token' )
+            } else {
+                resolve( token );
             }
         })
 
     })
 }
 
-module.exports = {
-    generarJWT
+
+const comprobarJWT = async( token = '') => {
+
+    try {
+        
+        if(  token.length < 10 ) {
+            return null;
+        }
+
+        const { uid } = jwt.verify( token, process.env.SECRETORPRIVATEKEY );
+        const usuario = await Usuario.findById( uid );
+
+        if ( usuario ) {
+            if ( usuario.estado ) {
+                return usuario;
+            } else {
+                return null;
+            }
+        } else {
+            return null;
+        }
+
+    } catch (error) {
+        return null;
+    }
+
 }
+
+
+
+
+module.exports = {
+    generarJWT,
+    comprobarJWT
+}
+
